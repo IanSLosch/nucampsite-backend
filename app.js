@@ -4,6 +4,7 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
@@ -11,6 +12,20 @@ var usersRouter = require('./routes/users');
 const campsiteRouter = require('./routes/campsiteRouter');
 const promotionRouter = require('./routes/promotionRouter');
 const partnerRouter = require('./routes/partnerRouter');
+
+const mongoose = require('mongoose')
+
+const url = 'mongodb://localhost:27017/nucampsite'
+const connect = mongoose.connect(url, {
+  useCreateIndex: true,
+  useFindAndModify: false, 
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+
+connect.then(() => console.log('Connected correctly to Server'),
+  err => console.log(err) // another way to handle errors (this could also be a .catch)
+)
 
 var app = express();
 

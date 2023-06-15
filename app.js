@@ -36,34 +36,44 @@ app.set('view engine', 'jade')
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
-app.use(cookieParser())
+app.use(cookieParser('12345-67890-09876-54321')) // cryptographic key that is used by cookie parser to sign the information and encrypt it to send it to client
 
-// add basic authentication here
+// add encrypted authentication using cookieParser
 function auth(req, res, next) {
-  console.log(req.headers)
-  const authHeader = req.headers.authorization
-  if (!authHeader) { // no username and pass info
-      const err = new Error('You are not authenticated!')
-      res.setHeader('WWW-Authenticate', 'Basic') // lets client know the server is requesting basic authenitcation
-      err.status = 401
-      return next(err) // passed to express error handler
-  }
+  if (!req.signedCookies.user) { 
+    const authHeader = req.headers.authorization
+    if (!authHeader) { // no username and pass info
+        const err = new Error('You are not authenticated!')
+        res.setHeader('WWW-Authenticate', 'Basic') // lets client know the server is requesting basic authenitcation
+        err.status = 401
+        return next(err) // passed to express error handler
+    }
 
-  const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':') // Buffer is a global class in node. has a static method 'from'
-  const user = auth[0] // grabs username from 'auth' array created above
-  const pass = auth[1] // grabs password from 'auth' array created above
-  if (user === 'admin' && pass === 'password') {
-      return next() // authorized
+    const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':') // Buffer is a global class in node. has a static method 'from'
+    const user = auth[0] // grabs username from 'auth' array created above
+    const pass = auth[1] // grabs password from 'auth' array created above
+    if (user === 'admin' && pass === 'password') {
+        res.cookie('user', 'admin', {signed: true}) // res.cookie comes from express response object api (username, password, optional configuration values) - signed: true lets express know to use the secret key from kooie parser to create a signed cookie
+        return next() // authorized
+    } else {
+        const err = new Error('You are not authenticated!')
+        res.setHeader('WWW-Authenticate', 'Basic') // challenges the user to resubmit username and password
+        err.status = 401
+        return next(err) // passed to express error handler
+    }
   } else {
-      const err = new Error('You are not authenticated!')
-      res.setHeader('WWW-Authenticate', 'Basic')      
-      err.status = 401
-      return next(err) // passed to express error handler
+    if (req.signedCookies.user === 'admin') {
+      return next()
+    } else{
+      const err = new Error('You are not authenticated!')  
+        err.status = 401
+        return next(err)
+    }
   }
 }
 
 app.use(auth)
-// end basic authentication
+// end encrypted authentication using cookieParser
 
 app.use(express.static(path.join(__dirname, 'public')))
 

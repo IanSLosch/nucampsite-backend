@@ -3,6 +3,8 @@ var express = require('express')
 var path = require('path')
 var cookieParser = require('cookie-parser')
 var logger = require('morgan')
+const session = require('express-session')
+const FileStore = require('session-file-store')(session) // require('session-file-store) returns a function. when it does, we are immediately calling it passing it session
 
 
 var indexRouter = require('./routes/index')
@@ -36,11 +38,25 @@ app.set('view engine', 'jade')
 app.use(logger('dev'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
-app.use(cookieParser('12345-67890-09876-54321')) // cryptographic key that is used by cookie parser to sign the information and encrypt it to send it to client
+
+// app.use(cookieParser('12345-67890-09876-54321')) // cryptographic key that is used by cookie parser to sign the information and encrypt it to send it to client
+
+// session start
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false, // when new sessions are mad ebut no updates are made to it, it won't get saved. helps prevent bloating of stored data
+  resave: false, // once a sessions is created, updated and saved, it will continue to be resaved whenever a request is made for that session (even if no changes made) helps keeping the session marked as active so it doesn't get reset while user is using it
+  store: new FileStore() //creates FileStore to save to the hard disk instead of just application memory
+}))
+
+//session end
 
 // add encrypted authentication using cookieParser
 function auth(req, res, next) {
-  if (!req.signedCookies.user) { 
+  console.log(req.session)
+
+  if (!req.session.user) { 
     const authHeader = req.headers.authorization
     if (!authHeader) { // no username and pass info
         const err = new Error('You are not authenticated!')
@@ -53,7 +69,7 @@ function auth(req, res, next) {
     const user = auth[0] // grabs username from 'auth' array created above
     const pass = auth[1] // grabs password from 'auth' array created above
     if (user === 'admin' && pass === 'password') {
-        res.cookie('user', 'admin', {signed: true}) // res.cookie comes from express response object api (username, password, optional configuration values) - signed: true lets express know to use the secret key from kooie parser to create a signed cookie
+        req.session.user = 'admin' // res.cookie comes from express response object api (username, password, optional configuration values) - signed: true lets express know to use the secret key from kooie parser to create a signed cookie
         return next() // authorized
     } else {
         const err = new Error('You are not authenticated!')
@@ -62,7 +78,7 @@ function auth(req, res, next) {
         return next(err) // passed to express error handler
     }
   } else {
-    if (req.signedCookies.user === 'admin') {
+    if (req.session.user === 'admin') {
       return next()
     } else{
       const err = new Error('You are not authenticated!')  

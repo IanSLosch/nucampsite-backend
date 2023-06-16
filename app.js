@@ -5,7 +5,8 @@ var cookieParser = require('cookie-parser')
 var logger = require('morgan')
 const session = require('express-session')
 const FileStore = require('session-file-store')(session) // require('session-file-store) returns a function. when it does, we are immediately calling it passing it session
-
+const passport = require('passport')
+const authenticate = require('./authenticate') // authenticate.js
 
 var indexRouter = require('./routes/index')
 var usersRouter = require('./routes/users')
@@ -51,25 +52,23 @@ app.use(session({
 }))
 //session end
 
+app.use(passport.initialize()) // only necessary if you are using session based authenticaton. these are two middleware functions provided by passport. they check incoming requests to see if there is an existing session with that client. if so, session data is loading into request as req.user
+app.use(passport.session())
+
+
 app.use('/', indexRouter)
 app.use('/users', usersRouter)
 
 // add encrypted authentication using cookieParser
 function auth(req, res, next) {
-  console.log(req.session)
+  console.log(req.user)
 
-  if (!req.session.user) {
+  if (!req.user) { // if there is no user at this point, there is no session because initialize() and session() would have added a req.user property
     const err = new Error('You are not authenticated!')
     err.status = 401
     return next(err) // passed to express error handler
   } else {
-    if (req.session.user === 'authenticated') {
-      return next()
-    } else {
-      const err = new Error('You are not authenticated!')
-      err.status = 401
-      return next(err)
-    }
+    return next()
   }
 }
 

@@ -5,16 +5,22 @@ const authenticate = require('../authenticate')
 
 var router = express.Router()
 
-/* GET users listing. */
-router.get('/', function (req, res, next) {
-  res.send('respond with a resource')
+// localhost:3000/users/
+router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function (req, res, next) {
+  User.find()
+    .then((users) => {
+      res.statusCode = 200
+      res.setHeader('Content-Type, application/json')
+      res.json(users)
+    }).catch(err => next(err))
 })
 
+// localhost:3000/users/signup
 router.post('/signup', (req, res) => { //this is for when user wants to post new registration data
   User.register(
     new User({ username: req.body.username }),
     req.body.password,
-    (err, user) => {
+    (err, user) => { // user object in this callback is optional 
       if (err) {
         res.statusCode = 500
         res.setHeader('Content-Type', 'application/json')
@@ -44,6 +50,7 @@ router.post('/signup', (req, res) => { //this is for when user wants to post new
   )
 })
 
+// localhost:3000/users/login
 router.post('/login', passport.authenticate('local'), (req, res) => { // passing passport.authenticate('local') as a second argument enables authentication on this route
   // passport.authenticate('local') takes care of all of the error handling and authentication. only need to return success case
   const token = authenticate.getToken({ _id: req.user._id })
@@ -52,6 +59,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => { // passing
   res.json({ success: true, token: token, status: 'You are successfully logged in!' })
 })
 
+// localhost:3000/users/logout
 router.get('/logout', (req, res, next) => { // logouts user
   if (req.session) { // is there a session?
     req.session.destroy() // deletes the session

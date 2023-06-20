@@ -14,7 +14,8 @@ const userSchema = new Schema({ //user and password schemas are no longer needed
   admin: {
     type: Boolean,
     default: false
-  }
+  },
+  facebookId: String
 })
 
 userSchema.plugin(passportLocalMongoose) // this plugin will provide additional authentication methods including authenticate()

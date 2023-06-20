@@ -1,6 +1,7 @@
-const express = require('express');
-const authenticate = require('../authenticate');
-const multer = require('multer');
+const express = require('express')
+const authenticate = require('../authenticate')
+const multer = require('multer')
+const cors = require('./cors')
 
 // multer does have default fallback configurations. below is an example of custom configuration
 
@@ -24,21 +25,23 @@ const upload = multer({ storage: storage, fileFilter: imageFileFilter}); // call
 
 const uploadRouter = express.Router();
 
+// http://localhost:3000/imageUpload
 uploadRouter.route('/')
-.get(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.options(cors.corsWithOptions, (req, res) => res.sendStatus(200))
+.get(cors.cors, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end('GET operation not supported on /imageUpload');
 })
-.post(authenticate.verifyUser, authenticate.verifyAdmin, upload.single('imageFile'), (req, res) => { // upload.single('imageFile') says that we are aexpecting a single file upload with with the imput field name of 'imageFile'. multer will process the file and continue on to res.status code
+.post(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, upload.single('imageFile'), (req, res) => { // upload.single('imageFile') says that we are aexpecting a single file upload with with the imput field name of 'imageFile'. multer will process the file and continue on to res.status code
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.json(req.file);
 })
-.put(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.put(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /imageUpload');
 })
-.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
+.delete(cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, (req, res) => {
     res.statusCode = 403;
     res.end('DELETE operation not supported on /imageUpload');
 });

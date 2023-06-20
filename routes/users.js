@@ -2,11 +2,12 @@ var express = require('express')
 const User = require('../models/user')
 const passport = require('passport') // provides methods useful for reqistering and logging in users
 const authenticate = require('../authenticate')
+const cors = require('./cors')
 
 var router = express.Router()
 
 // localhost:3000/users/
-router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function (req, res, next) {
+router.get('/', cors.corsWithOptions, authenticate.verifyUser, authenticate.verifyAdmin, function (req, res, next) {
   User.find()
     .then((users) => {
       res.statusCode = 200
@@ -16,7 +17,7 @@ router.get('/', authenticate.verifyUser, authenticate.verifyAdmin, function (req
 })
 
 // localhost:3000/users/signup
-router.post('/signup', (req, res) => { //this is for when user wants to post new registration data
+router.post('/signup', cors.corsWithOptions, (req, res) => { //this is for when user wants to post new registration data
   User.register(
     new User({ username: req.body.username }),
     req.body.password,
@@ -51,7 +52,7 @@ router.post('/signup', (req, res) => { //this is for when user wants to post new
 })
 
 // localhost:3000/users/login
-router.post('/login', passport.authenticate('local'), (req, res) => { // passing passport.authenticate('local') as a second argument enables authentication on this route
+router.post('/login', cors.corsWithOptions, passport.authenticate('local'), (req, res) => { // passing passport.authenticate('local') as a second argument enables authentication on this route
   // passport.authenticate('local') takes care of all of the error handling and authentication. only need to return success case
   const token = authenticate.getToken({ _id: req.user._id })
   res.statusCode = 200
@@ -60,7 +61,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => { // passing
 })
 
 // localhost:3000/users/logout
-router.get('/logout', (req, res, next) => { // logouts user
+router.get('/logout', cors.corsWithOptions, (req, res, next) => { // logouts user
   if (req.session) { // is there a session?
     req.session.destroy() // deletes the session
     res.clearCookie('session-id') // session-id was configured in the app.js file when the session was setup

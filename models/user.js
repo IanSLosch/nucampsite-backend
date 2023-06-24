@@ -2,10 +2,10 @@ const mongoose = require('mongoose')
 const passportLocalMongoose = require('passport-local-mongoose')
 const Schema = mongoose.Schema
 
-const userSchema = new Schema({ //user and password schemas are no longer needed as they will now be provided by 'passportLocalMongoose'
+const userSchema = new Schema({ //user and password schemas are provided by 'passportLocalMongoose'
   firstname: {
     type: String,
-    defualt: ''
+    default: ''
   },
   lastname: {
     type: String,
@@ -15,7 +15,10 @@ const userSchema = new Schema({ //user and password schemas are no longer needed
     type: Boolean,
     default: false
   },
-  facebookId: String
+  facebookId: {
+    type: String,
+    default: ''
+  }
 })
 
 userSchema.plugin(passportLocalMongoose) // this plugin will provide additional authentication methods including authenticate()
